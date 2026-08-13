@@ -1,0 +1,162 @@
+// LabTrack — Multi-Tenant Diagnostic Lab Marketplace & Appointment Platform
+// Schema follows docs/System_Design.md §2 (multi-tenancy decision), §5 (class diagram), §8 (ER diagram).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  PATIENT
+  LAB_STAFF
+  LAB_ADMIN
+  PLATFORM_ADMIN
+}
+
+enum LabStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum AppointmentStatus {
+  BOOKED
+  SAMPLE_COLLECTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+/// Tenant root. Every lab-scoped table below carries a labId FK back to this model.
+model Lab {
+  id           String    @id @default(uuid())
+  name         String
+  address      String
+  city         String
+  contactEmail String
+  status       LabStatus @default(PENDING)
+  createdAt    DateTime  @default(now())
+
+  staff        User[]
+  offerings    LabTestOffering[]
+  appointments Appointment[]
+  auditLogs    AuditLog[]
+
+  @@index([status])
+  @@map("labs")
+}
+
+/// labId is nullable: null for PATIENT and PLATFORM_ADMIN, required for LAB_STAFF/LAB_ADMIN.
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  labId        String?
+  createdAt    DateTime @default(now())
+
+  lab                Lab?          @relation(fields: [labId], references: [id])
+  appointmentsBooked Appointment[] @relation("PatientAppointments")
+  samplesCollected   Sample[]      @relation("StaffSamples")
+  auditLogs          AuditLog[]
+
+  @@index([labId])
+  @@map("users")
+}
+
+/// Platform-level standardised catalog — not tenant-scoped.
+model Test {
+  id          String  @id @default(uuid())
+  name        String
+  category    String
+  sampleType  String
+  description String?
+
+  offerings LabTestOffering[]
+
+  @@map("tests")
+}
+
+/// Lab-scoped: a lab's price/turnaround/prep for a platform Test.
+model LabTestOffering {
+  id               String  @id @default(uuid())
+  labId            String
+  testId           String
+  price            Decimal @db.Decimal(10, 2)
+  turnaroundHours  Int
+  prepInstructions String?
+  active           Boolean @default(true)
+
+  lab          Lab           @relation(fields: [labId], references: [id])
+  test         Test          @relation(fields: [testId], references: [id])
+  appointments Appointment[]
+
+  @@unique([labId, testId])
+  @@index([labId])
+  @@index([testId])
+  @@map("lab_test_offerings")
+}
+
+/// Lab-scoped. Unique (labId, offeringId, slotDatetime) is the DB-level backstop for
+/// slot-clash prevention (docs/System_Design.md §8) — the application-level availability
+/// check in the booking flow is the primary defense, this guarantees it under concurrency.
+model Appointment {
+  id           String            @id @default(uuid())
+  patientId    String
+  labId        String
+  offeringId   String
+  slotDatetime DateTime
+  status       AppointmentStatus @default(BOOKED)
+  createdAt    DateTime          @default(now())
+
+  patient  User            @relation("PatientAppointments", fields: [patientId], references: [id])
+  lab      Lab             @relation(fields: [labId], references: [id])
+  offering LabTestOffering @relation(fields: [offeringId], references: [id])
+  sample   Sample?
+
+  @@unique([labId, offeringId, slotDatetime])
+  @@index([labId])
+  @@index([patientId])
+  @@map("appointments")
+}
+
+/// Not directly labId-tagged — scoped transitively through its Appointment.
+/// The tenant-scoping extension (src/lib/tenant-scope.ts) filters this model
+/// via a relation filter on `appointment.labId`, not a direct column.
+model Sample {
+  id                 String    @id @default(uuid())
+  appointmentId      String    @unique
+  collectedAt        DateTime?
+  collectedByStaffId String?
+  notes              String?
+
+  appointment      Appointment @relation(fields: [appointmentId], references: [id])
+  collectedByStaff User?       @relation("StaffSamples", fields: [collectedByStaffId], references: [id])
+
+  @@map("samples")
+}
+
+/// NFR10 (docs/SRS.md §5): platform-admin actions on lab approval/suspension
+/// are logged and auditable. Deliberately platform-wide, not tenant-scoped —
+/// written only through the base `prisma` client from inside the admin
+/// actions themselves, never through a tenant-scoped `db` client.
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorId     String
+  action      String
+  targetLabId String
+  detail      String?
+  createdAt   DateTime @default(now())
+
+  actor     User @relation(fields: [actorId], references: [id])
+  targetLab Lab  @relation(fields: [targetLabId], references: [id])
+
+  @@index([targetLabId])
+  @@map("audit_logs")
+}
