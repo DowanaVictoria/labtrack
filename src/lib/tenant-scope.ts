@@ -182,14 +182,19 @@ function scopeSample(labId: string): Scoper {
 }
 
 // Test is the platform-level catalog (docs/System_Design.md §2 lists it as
-// NOT tenant-scoped) — a lab_admin needs to read it to pick a test to offer,
-// but must never be able to write to it through this client. Without this,
-// `test` would pass through the extension untouched (only models named in
-// forTenant()'s `query` object are intercepted) and a tenant-scoped client
-// could silently edit the shared catalog — platform-admin CRUD is the only
-// sanctioned write path, once it exists.
-const scopeTestReadOnly: Scoper = async (operation, args, query) => {
-  if (READ_OPS.has(operation)) {
+// NOT tenant-scoped) — a lab_admin reads it to pick a test to offer, and (as
+// of SRS.md FR28) may also CREATE a new catalog entry when the one they need
+// doesn't exist yet, so every lab can list tests the seeded catalog didn't
+// anticipate. Update/delete stay blocked: editing or removing an entry other
+// labs may already depend on is a bigger blast radius than adding one, and
+// nothing in the app needs it yet. `createTest` (src/app/actions/tests.ts)
+// does a case-insensitive duplicate-name check before creating, since this
+// client has no other gate against catalog fragmentation — see
+// docs/Technical_Debt_Plan.md for the known gap (app-level check only, no DB
+// unique constraint, so a race between two concurrent creates isn't ruled
+// out at the database level).
+const scopeTest: Scoper = async (operation, args, query) => {
+  if (READ_OPS.has(operation) || operation === "create") {
     return query(args);
   }
   throw new TenantIsolationError(`test.${operation} is not permitted through a tenant-scoped client`);
@@ -337,7 +342,7 @@ export function forTenant(labId: string) {
       },
       test: {
         $allOperations: ({ operation, args, query }) =>
-          scopeTestReadOnly(operation, args as AnyArgs, query as never),
+          scopeTest(operation, args as AnyArgs, query as never),
       },
       user: {
         $allOperations: ({ operation, args, query }) => user(operation, args as AnyArgs, query as never),

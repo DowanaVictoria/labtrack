@@ -1,6 +1,7 @@
 import { requireTenantSession } from "@/lib/session";
 import { labNav } from "@/app/lab/nav";
 import { AddOfferingForm } from "@/app/lab/add-offering-form";
+import { AddTestForm } from "@/app/lab/add-test-form";
 import { EditOfferingForm } from "@/app/lab/edit-offering-form";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardHeading } from "@/components/ui/card";
@@ -46,6 +47,11 @@ export default async function LabOfferingsPage() {
         <div className="border-t border-border pt-4">
           <AddOfferingForm availableTests={availableTests} />
         </div>
+        {session.user.role === "LAB_ADMIN" && (
+          <div className="border-t border-border pt-4">
+            <AddTestForm />
+          </div>
+        )}
       </Card>
     </PageShell>
   );

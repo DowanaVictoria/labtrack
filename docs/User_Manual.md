@@ -1,10 +1,12 @@
-# User Manual — MediLab
+# User Manual for MediLab
 
-Screenshots below are from the live Phase 4 system-test walkthrough (`docs/Testing_Report.md` §6) — real screens, not mockups.
+**Prepared by:** Victoria Dowana (Student ID: 22425077)
+
+Screenshots below are from the live Phase 4 system test walkthrough (`docs/Testing_Report.md` §6): real screens, not mockups.
 
 ## Getting started
 
-Everyone signs in at `/login`. New patients register at `/signup` (or `/register` follow the "Sign in" link's "Register" option); new labs register at `/register`.
+Everyone signs in at `/login`. New patients register at `/signup` (or follow the "Sign in" link's "Register" option); new labs register at `/register`.
 
 ## Patient flow
 
@@ -21,7 +23,7 @@ Everyone signs in at `/login`. New patients register at `/signup` (or `/register
 
    ![Appointment shows COMPLETED](screenshots/11-patient-sees-completed.png)
 
-5. **Cancel.** A BOOKED (not yet sample-collected) appointment can be cancelled from the same list.
+5. **Cancel.** A BOOKED (not yet sample collected) appointment can be cancelled from the same list.
 
 ## Lab registration and onboarding
 
@@ -32,7 +34,7 @@ Everyone signs in at `/login`. New patients register at `/signup` (or `/register
 2. **Wait for platform admin review.** Until approved, `/lab` shows a banner explaining the lab is pending.
 3. **Approval.** Once a platform admin approves the lab (see below), the banner clears and the lab becomes searchable.
 
-   ![Lab dashboard after approval — no pending banner](screenshots/03-lab-admin-dashboard-approved.png)
+   ![Lab dashboard after approval, with no pending banner](screenshots/03-lab-admin-dashboard-approved.png)
 
 ## Lab admin flow
 
@@ -42,11 +44,13 @@ Everything a lab staff member can do, plus:
 
    ![Offering added](screenshots/04-lab-admin-added-offering.png)
 
-2. **Manage staff.** From "Staff" (`/lab/staff`), add staff accounts for your lab. MediLab emails the new staff member their login details (and shows them on-screen as a fallback); each staff member can change their password afterward from their own account page.
+2. **Add a new test to the catalog, if needed.** On the same "Add test" page, "Can't find your test? Add a new test to the catalog" opens a small form (name, category, sample type, optional description). If a test with that name already exists, you'll be told to select it instead of creating a duplicate; otherwise the new test appears in the catalog immediately and you can attach your own offering to it right away.
+
+3. **Manage staff.** From "Staff" (`/lab/staff`), add staff accounts for your lab. MediLab emails the new staff member their login details (and shows them on screen as a fallback); each staff member can change their password afterward from their own account page.
 
    ![Staff account created](screenshots/05-lab-admin-added-staff.png)
 
-3. **Edit the lab profile.** "Lab profile" lets you update name, address, city, and contact email.
+4. **Edit the lab profile.** "Lab profile" lets you update name, address, city, and contact email.
 
 ## Lab staff flow
 
@@ -56,14 +60,14 @@ Everything a lab staff member can do, plus:
    ![Today's queue](screenshots/08-staff-todays-queue.png)
 
 3. **Process each appointment** through the pipeline as work happens:
-   - **Mark collected** — records who collected the sample and when.
+   - **Mark collected:** records who collected the sample and when.
 
      ![Sample marked collected](screenshots/09-staff-sample-collected.png)
 
-   - **Advance** — moves SAMPLE COLLECTED → IN PROGRESS.
-   - **Complete** — moves IN PROGRESS → COMPLETED. The patient sees this update on their own "My appointments" list.
+   - **Advance:** moves SAMPLE COLLECTED to IN PROGRESS.
+   - **Complete:** moves IN PROGRESS to COMPLETED. The patient sees this update on their own "My appointments" list.
 
-   Each step is enforced server-side in that exact order — the buttons shown always match what's actually valid to do next.
+   Each step is enforced server side in that exact order, so the buttons shown always match what's actually valid to do next.
 
 ## Platform admin flow
 
@@ -72,8 +76,8 @@ Everything a lab staff member can do, plus:
 
    ![Platform admin approves a lab](screenshots/02-admin-approved-lab.png)
 
-3. **Suspend / reinstate.** An already-approved lab can be suspended (removed from search, staff/admin locked out of the dashboard) and later reinstated.
-4. **Monitor.** The dashboard shows platform-wide stats (approved labs, bookings, completed bookings, tests in the catalog) and a recent-activity log of every approval/rejection/suspension, so every action is auditable.
+3. **Suspend / reinstate.** An already approved lab can be suspended (removed from search, with staff/admin locked out of the dashboard) and later reinstated.
+4. **Monitor.** The dashboard shows platform wide stats (approved labs, bookings, completed bookings, tests in the catalog) and a recent activity log of every approval, rejection, and suspension, so every action is auditable.
 
 ## Account management (all roles)
 
@@ -81,4 +85,4 @@ Every account has an account page (linked from the header's account menu) to cha
 
 ## Known limitations to be aware of
 
-See `docs/Technical_Debt_Plan.md` for the full list. The ones most likely to be visible to a user: a cancelled appointment slot can't currently be rebooked by anyone (item 1); location search is by city text, not distance (item 4); there's no in-platform payment — arrange payment with the lab directly (item 6); results are tracked as a status only, not a structured value or file (item 7).
+See `docs/Technical_Debt_Plan.md` for the full list. The ones most likely to be visible to a user: a cancelled appointment slot can't currently be rebooked by anyone (item 1); location search is by city text, not distance (item 4); there's no in platform payment, so arrange payment with the lab directly (item 6); results are tracked as a status only, not a structured value or file (item 7).

@@ -1,11 +1,11 @@
 # System Design
 
-**Project:** MediLab — Multi-Tenant Diagnostic Lab Marketplace & Appointment Platform
-**Author:** [Your Name]
+**Project:** MediLab, a Multi Tenant Diagnostic Lab Marketplace and Appointment Platform
+**Author:** Victoria Dowana (Student ID: 22425077)
 **Version:** 1.0
 **Date:** 2026-08-12
 
-> Builds on `SRS.md` (requirements, actors, MoSCoW scope) and `Effort_Estimation.md` (use-case sizing). Diagrams selected are the ones that best communicate a multi-tenant system: architecture, tenant data model, use-case, class, two sequence flows, and ER — wireframes are described rather than drawn in full fidelity, appropriate for an initial release.
+> Builds on `SRS.md` (requirements, actors, MoSCoW scope) and `Effort_Estimation.md` (use case sizing). Diagrams selected are the ones that best communicate a multi tenant system: architecture, tenant data model, use case, class, two sequence flows, and ER. Wireframes are described rather than drawn in full fidelity, which is appropriate for an initial release.
 
 ---
 
@@ -13,29 +13,31 @@
 
 | Layer | Choice | Why |
 |---|---|---|
-| Front-end | Next.js (React) + Tailwind CSS | Single framework covers three distinct UI surfaces (patient, lab console, platform-admin console) without standing up separate apps; fast to scaffold |
-| Back-end | Next.js API routes (Node.js/TypeScript) | Keeps one deployable unit for a small team; avoids the coordination overhead of a separate backend service for an MVP |
-| Database | PostgreSQL (managed, e.g. Supabase/Neon) | Relational integrity (foreign keys, unique constraints) is exactly what tenant-scoped data and slot-clash prevention need |
-| ORM | Prisma | Typed schema/migrations, and its query-extension mechanism is the enforcement point for tenant scoping (§2) |
-| Auth | Auth.js (NextAuth) or the managed provider's built-in auth | Password hashing and session handling out of the box, rather than hand-rolled — directly supports NFR1 |
-| Hosting | Vercel (app) + managed Postgres | Cost-effective/pilot-tier per `SRS.md` §9, minimal ops overhead |
+| Front end | Next.js (React) + Tailwind CSS | Single framework covers three distinct UI surfaces (patient, lab console, platform admin console) without standing up separate apps; fast to scaffold |
+| Back end | Next.js API routes (Node.js/TypeScript) | Keeps one deployable unit for a small team; avoids the coordination overhead of a separate backend service for an MVP |
+| Database | PostgreSQL (managed, e.g. Supabase/Neon) | Relational integrity (foreign keys, unique constraints) is exactly what tenant scoped data and slot clash prevention need |
+| ORM | Prisma | Typed schema/migrations, and its query extension mechanism is the enforcement point for tenant scoping (§2) |
+| Auth | Auth.js (NextAuth) or the managed provider's built in auth | Password hashing and session handling out of the box, rather than hand rolled, directly supporting NFR1 |
+| Hosting | Vercel (app) + managed Postgres | Cost effective/pilot tier per `SRS.md` §9, minimal ops overhead |
 
 This stack is chosen for velocity on a small team, consistent with the effort estimate's assumption of scaffolding/tooling reuse (`Effort_Estimation.md` §4).
 
 ---
 
-## 2. Multi-Tenancy Data Model Decision
+## 2. Multi Tenancy Data Model Decision
 
-**Decision: shared database, shared schema, with a `labId` column on every lab-scoped table, enforced through a single centralised data-access layer.**
+**Decision: shared database, shared schema, with a `labId` column on every lab scoped table, enforced through a single centralised data access layer.**
 
-Alternative considered: **schema-per-tenant** (or database-per-tenant) — rejected for this release because:
-- The platform's core value is **cross-tenant search and comparison** (FR3, FR4) — this requires querying across labs in one pass; schema/DB-per-tenant turns that into a fan-out query across N schemas, adding real complexity for no benefit at pilot scale.
+Alternative considered: **schema per tenant** (or database per tenant). Rejected for this release because:
+- The platform's core value is **cross tenant search and comparison** (FR3, FR4), which requires querying across labs in one pass; schema/DB per tenant turns that into a fan out query across N schemas, adding real complexity for no benefit at pilot scale.
 - The initial release onboards a small number of pilot labs (`SRS.md` §4 assumption); the operational cost of migrating N schemas in lockstep isn't justified yet.
-- A shared schema lets tenant-scoping be enforced in **one place** — directly satisfying NFR7 ("tenant-scoping logic is centralised, not re-implemented per query"), which is the strongest available mitigation against an isolation bug (the single highest-severity risk identified in `Effort_Estimation.md` §3 and §6).
+- A shared schema lets tenant scoping be enforced in **one place**, directly satisfying NFR7 ("tenant scoping logic is centralised, not re implemented per query"), which is the strongest available mitigation against an isolation bug (the single highest severity risk identified in `Effort_Estimation.md` §3 and §6).
 
-**Enforcement mechanism:** every Prisma query against a lab-scoped model (`Lab`, `LabTestOffering`, `Appointment` when accessed by staff/admin, `Sample`) is routed through a Prisma Client Extension that automatically injects a `where: { labId: session.labId }` filter for any session whose role is `lab_staff` or `lab_admin`. Application code cannot opt out of this filter — there is no code path that queries these tables without going through the extension. `platform_admin` sessions use a separate, explicitly-named unscoped client method, so a platform-wide query is always a deliberate, visible choice in the code rather than an accidental default.
+**Enforcement mechanism:** every Prisma query against a lab scoped model (`Lab`, `LabTestOffering`, `Appointment` when accessed by staff/admin, `Sample`) is routed through a Prisma Client Extension that automatically injects a `where: { labId: session.labId }` filter for any session whose role is `lab_staff` or `lab_admin`. Application code cannot opt out of this filter, since there is no code path that queries these tables without going through the extension. `platform_admin` sessions use a separate, explicitly named unscoped client method, so a platform wide query is always a deliberate, visible choice in the code rather than an accidental default.
 
-This decision is the direct architectural response to NFR2 and FR27 in `SRS.md`, and is the first thing to verify under test (see the tenant-isolation checkpoint in `Effort_Estimation.md` §3 and `todo.md` Phase 4).
+This decision is the direct architectural response to NFR2 and FR27 in `SRS.md`, and is the first thing to verify under test (see the tenant isolation checkpoint in `Effort_Estimation.md` §3 and `todo.md` Phase 4).
+
+**Deliberate exception (FR28, added post delivery):** `Test` is the one platform wide model where the tenant scoped client is allowed a narrow write path, `create` only, so a lab admin can add a catalog entry the seeded data didn't anticipate. `update`/`delete` on `Test` stay refused through this client, same as before. This is documented as an explicit, named exception in `src/lib/tenant-scope.ts` rather than a general loosening of the enforcement mechanism above: only `create` was opened, only for `Test`, and a case insensitive duplicate name check in `createTest` is the (application level, not database level) guard against the catalog fragmentation this design otherwise avoids. See `Technical_Debt_Plan.md` item 9.
 
 ---
 
@@ -51,7 +53,7 @@ flowchart TB
 
     subgraph App["Next.js Application"]
         API["API Routes / Server Actions"]
-        AUTH["Auth.js — session + role"]
+        AUTH["Auth.js: session and role"]
         TSCOPE["Tenant-Scoping Extension\n(auto-filters by labId)"]
     end
 
@@ -65,11 +67,11 @@ flowchart TB
     TSCOPE --> DB
 ```
 
-All three UI surfaces are one application with role-based routing/rendering, not three separate apps — this keeps the tenant-scoping enforcement point (§2) singular rather than duplicated.
+All three UI surfaces are one application with role based routing/rendering, not three separate apps, which keeps the tenant scoping enforcement point (§2) singular rather than duplicated.
 
 ---
 
-## 4. Use-Case Diagram
+## 4. Use Case Diagram
 
 ```mermaid
 flowchart LR
@@ -93,13 +95,14 @@ flowchart LR
     LabAdmin --> UC9[Manage Lab Profile]
     LabAdmin --> UC10[Manage Test Offerings]
     LabAdmin --> UC11[Manage Staff Accounts]
+    LabAdmin --> UC15[Add New Test to Catalog]
 
     PlatformAdmin --> UC1
     PlatformAdmin --> UC12[Approve/Reject Lab]
     PlatformAdmin --> UC14[Suspend/Reinstate Lab]
 ```
 
-Maps directly to the FR groupings in `SRS.md` §5; every Must-have FR has a corresponding node above. `Test` is still a platform-owned, shared catalog entity (see §5/§8), but per `SRS.md` §5's FR23 change note it's fixed seeded data for the initial release, not a use case the platform admin performs — hence no "manage test catalog" node here.
+Maps directly to the FR groupings in `SRS.md` §5; every Must have FR has a corresponding node above. `Test` is a platform owned, shared catalog entity (see §5/§8); per `SRS.md` §5's FR23 change note the platform admin does not curate it, but per the later FR28 change note (v2.2) a lab admin can add a new entry when the seeded catalog doesn't cover what they need (UC15), a narrower, lab admin scoped capability, not a return of platform admin catalog management.
 
 ---
 
@@ -167,11 +170,11 @@ classDiagram
     Appointment "1" --> "0..1" Sample : produces
 ```
 
-`labId` appears on `User` (nullable — null for patients and platform admins), `Lab` itself, `LabTestOffering`, and `Appointment` — these are exactly the tables the tenant-scoping extension (§2) intercepts.
+`labId` appears on `User` (nullable, meaning null for patients and platform admins), `Lab` itself, `LabTestOffering`, and `Appointment`. These are exactly the tables the tenant scoping extension (§2) intercepts.
 
 ---
 
-## 6. Sequence Diagram — Lab Onboarding
+## 6. Sequence Diagram: Lab Onboarding
 
 ```mermaid
 sequenceDiagram
@@ -182,7 +185,7 @@ sequenceDiagram
 
     LA->>Sys: Submit lab registration (profile)
     Sys->>DB: Create Lab (status = pending)
-    Sys-->>LA: Confirmation — pending approval
+    Sys-->>LA: Confirmation, pending approval
     PA->>Sys: View pending lab registrations
     Sys->>DB: Query Lab where status = pending
     DB-->>Sys: Pending labs list
@@ -196,7 +199,7 @@ sequenceDiagram
 
 ---
 
-## 7. Sequence Diagram — Core Booking Flow
+## 7. Sequence Diagram: Core Booking Flow
 
 ```mermaid
 sequenceDiagram
@@ -215,7 +218,7 @@ sequenceDiagram
         Sys->>DB: Create Appointment (status = Booked)
         Sys-->>P: Confirmation + prep instructions
     else slot taken
-        Sys-->>P: Slot unavailable — choose another
+        Sys-->>P: Slot unavailable, choose another
     end
     S->>Sys: View today's queue (scoped to their labId)
     Sys->>DB: Query Appointments where labId = staff.labId
@@ -287,13 +290,13 @@ erDiagram
     }
 ```
 
-A unique constraint on `(labId, offeringId, slotDatetime)` in `APPOINTMENT` is the database-level backstop for FR26 (slot-clash prevention) — the application check in §7 is the primary defense, but the constraint guarantees correctness even under concurrent requests.
+A unique constraint on `(labId, offeringId, slotDatetime)` in `APPOINTMENT` is the database level backstop for FR26 (slot clash prevention). The application check in §7 is the primary defense, but the constraint guarantees correctness even under concurrent requests.
 
 ---
 
-## 9. UI Wireframes (low-fidelity)
+## 9. UI Wireframes (low fidelity)
 
-**Patient — Search & Compare**
+**Patient: Search and Compare**
 ```
 ┌─────────────────────────────────────────────┐
 │ Search: [ Lipid Panel            ] [Search]  │
@@ -305,20 +308,20 @@ A unique constraint on `(labId, offeringId, slotDatetime)` in `APPOINTMENT` is t
 └─────────────────────────────────────────────┘
 ```
 
-**Patient — Booking Confirmation**
+**Patient: Booking Confirmation**
 ```
 ┌─────────────────────────────────────────────┐
-│ CityLab Diagnostics — Lipid Panel — GHS 80   │
+│ CityLab Diagnostics, Lipid Panel, GHS 80     │
 │ Prep: Fast 12 hours before sample collection │
 │ Slot: [ Tue 18 Aug, 9:00 AM ▾ ]              │
 │                          [Confirm Booking]    │
 └─────────────────────────────────────────────┘
 ```
 
-**Lab Staff — Queue**
+**Lab Staff: Queue**
 ```
 ┌─────────────────────────────────────────────┐
-│ Today's Queue — CityLab Diagnostics          │
+│ Today's Queue: CityLab Diagnostics           │
 ├─────────────────────────────────────────────┤
 │ 9:00  J. Owusu   Lipid Panel   [Mark Collected] │
 │ 9:30  A. Mensah  CBC           Sample Collected │
@@ -326,22 +329,22 @@ A unique constraint on `(labId, offeringId, slotDatetime)` in `APPOINTMENT` is t
 └─────────────────────────────────────────────┘
 ```
 
-**Lab Admin — Test Offerings**
+**Lab Admin: Test Offerings**
 ```
 ┌─────────────────────────────────────────────┐
-│ CityLab Diagnostics — Test Offerings [+ Add] │
+│ CityLab Diagnostics: Test Offerings [+ Add]  │
 ├─────────────────────────────────────────────┤
 │ Lipid Panel   GHS 80   24h   Active  [Edit]  │
 │ CBC           GHS 45   12h   Active  [Edit]  │
 └─────────────────────────────────────────────┘
 ```
 
-**Platform Admin — Pending Lab Approvals**
+**Platform Admin: Pending Lab Approvals**
 ```
 ┌─────────────────────────────────────────────┐
 │ Pending Lab Registrations                    │
 ├─────────────────────────────────────────────┤
-│ MedCheck Labs — Osu   [View] [Approve] [Reject] │
+│ MedCheck Labs, Osu   [View] [Approve] [Reject] │
 └─────────────────────────────────────────────┘
 ```
 
@@ -352,8 +355,8 @@ A unique constraint on `(labId, offeringId, slotDatetime)` in `APPOINTMENT` is t
 | Diagram | Primary FRs covered |
 |---|---|
 | Architecture (§3) | NFR2, NFR7, NFR9 |
-| Use-case (§4) | FR1–FR25, excluding FR23 (removed — see `SRS.md` §5 change note) |
+| Use case (§4) | FR1–FR25, excluding FR23 (removed, see `SRS.md` §5 change note) |
 | Class (§5) / ER (§8) | Entities underlying every FR |
-| Sequence — onboarding (§6) | FR17, FR22 |
-| Sequence — booking (§7) | FR3, FR4, FR7, FR8, FR13–FR15, FR26 |
+| Sequence, onboarding (§6) | FR17, FR22 |
+| Sequence, booking (§7) | FR3, FR4, FR7, FR8, FR13–FR15, FR26 |
 | Wireframes (§9) | FR3–FR9, FR13, FR20, FR22 |

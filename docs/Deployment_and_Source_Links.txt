@@ -1,0 +1,21 @@
+Student Name: Victoria Dowana
+Student ID: 22425077
+Project Title: MediLab, a Multi-Tenant Diagnostic Lab Marketplace and Appointment Platform
+Live Application: https://labtrack-zqmj.vercel.app
+Admin URL: https://labtrack-zqmj.vercel.app/admin
+Test Username: patient@labtrack.test
+Test Password: password123
+Admin Username: admin@labtrack.test
+Admin Password: password123
+Source Code Repository: https://github.com/DowanaVictoria/labtrack
+
+Additional seeded accounts (for testing the Lab Staff and Lab Admin roles):
+  Lab Admin (CityLab Diagnostics):   admin@citylab.test    / password123
+  Lab Staff (CityLab Diagnostics):   staff@citylab.test    / password123
+  Lab Admin (QuickTest Labs):        admin@quicktest.test  / password123
+
+Notes:
+- All seeded accounts use the same password: password123
+- Platform Admin (admin@labtrack.test) approves/rejects/suspends labs at the Admin URL above.
+- Sign in for every role happens through the same /login page; the app routes each
+  role to its own dashboard after login (/patient, /lab, or /admin).
