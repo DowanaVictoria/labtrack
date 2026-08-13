@@ -37,7 +37,7 @@ export function AddStaffForm() {
     <div className="flex flex-col gap-3">
       {created && (
         <div className="rounded-xl border border-ok bg-ok-tint p-4 text-sm">
-          <p className="font-bold text-ok">Staff account created — LabTrack has emailed {created.name} these details:</p>
+          <p className="font-bold text-ok">Staff account created — MediLab has emailed {created.name} these details:</p>
           <p className="mt-2 font-mono text-foreground">
             {created.email} / {created.password}
           </p>

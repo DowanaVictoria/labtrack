@@ -1,6 +1,6 @@
 # Software Requirements Specification (SRS)
 
-**Project:** LabTrack — Multi-Tenant Diagnostic Lab Marketplace & Appointment Platform
+**Project:** MediLab — Multi-Tenant Diagnostic Lab Marketplace & Appointment Platform
 **Author:** [Your Name]
 **Version:** 2.1
 **Date:** 2026-08-13
@@ -10,14 +10,14 @@
 ## 1. Introduction
 
 ### 1.1 Purpose
-This document specifies the functional and non-functional requirements for LabTrack, a multi-tenant marketplace platform. Multiple independent diagnostic labs list their test offerings, pricing, and locations on the platform; patients search a standardized test catalog, compare labs offering a given test, and book an appointment directly with the lab of their choice. It guides the initial release (MVP) build and serves as the basis for effort estimation, design, and testing.
+This document specifies the functional and non-functional requirements for MediLab, a multi-tenant marketplace platform. Multiple independent diagnostic labs list their test offerings, pricing, and locations on the platform; patients search a standardized test catalog, compare labs offering a given test, and book an appointment directly with the lab of their choice. It guides the initial release (MVP) build and serves as the basis for effort estimation, design, and testing.
 
 ### 1.2 Scope of this Document
 Covers: problem statement, stakeholders, functional requirements, non-functional requirements, and requirements prioritisation. Effort estimation, which builds directly on this SRS, is documented separately in `Effort_Estimation.md` and later folded into the consolidated Project Documentation.
 
 ### 1.3 Definitions
 - **Tenant / Lab** — an independent diagnostic laboratory operating its own storefront on the platform: its own profile, staff, test offerings, and appointment queue.
-- **Platform Admin** — the operator of LabTrack itself; onboards labs and oversees the marketplace. Does not curate the test catalog (see FR23 change note in §5).
+- **Platform Admin** — the operator of MediLab itself; onboards labs and oversees the marketplace. Does not curate the test catalog (see FR23 change note in §5).
 - **Test (standardized)** — a platform-level catalog entry (e.g. "Lipid Panel") that labs attach their own pricing/offering to, so patients can compare like-for-like across labs. Seeded as fixed platform data for the initial release rather than managed through an admin UI.
 - **Lab Test Offering** — a specific lab's listing for a standardized test: price, turnaround time, and any lab-specific prep notes.
 - **Appointment** — a booking made by a patient with a specific lab, for a specific test offering, at a specific date/time slot.
@@ -31,7 +31,7 @@ Covers: problem statement, stakeholders, functional requirements, non-functional
 
 Patients seeking a diagnostic lab test today must contact or visit labs one at a time — there is no way to see, in one place, which labs offer a given test, at what price, in what location, or with what turnaround time. This produces inefficient shopping-around and no price transparency. Independent labs, meanwhile, have no shared channel to reach patients beyond their own walk-in base, and each manages bookings with the same ad hoc, non-digital methods.
 
-LabTrack solves both sides of this: it is a marketplace where multiple labs (tenants) list their test offerings, and patients search, compare, and book across all participating labs from a single platform. Each lab retains full control of its own catalog, pricing, staff, and appointment queue; a platform admin governs which labs are onboarded and maintains the shared test taxonomy that makes cross-lab comparison meaningful.
+MediLab solves both sides of this: it is a marketplace where multiple labs (tenants) list their test offerings, and patients search, compare, and book across all participating labs from a single platform. Each lab retains full control of its own catalog, pricing, staff, and appointment queue; a platform admin governs which labs are onboarded and maintains the shared test taxonomy that makes cross-lab comparison meaningful.
 
 ---
 
@@ -51,7 +51,7 @@ Out of scope as direct actors for this build: insurers, referring physicians, la
 
 ## 4. System Overview
 
-LabTrack is a multi-tenant web application with four actors — Patient, Lab Staff, Lab Admin, Platform Admin. A shared, platform-owned test catalog lets patients discover and compare **Lab Test Offerings** across many labs; each lab's operational data (staff, offerings, appointments, samples) is logically isolated so no lab can see another lab's data. Patients book directly with a chosen lab; that lab's staff run their own queue. See `System_Design.md` for architecture, tenant-isolation approach, ER, and use-case diagrams.
+MediLab is a multi-tenant web application with four actors — Patient, Lab Staff, Lab Admin, Platform Admin. A shared, platform-owned test catalog lets patients discover and compare **Lab Test Offerings** across many labs; each lab's operational data (staff, offerings, appointments, samples) is logically isolated so no lab can see another lab's data. Patients book directly with a chosen lab; that lab's staff run their own queue. See `System_Design.md` for architecture, tenant-isolation approach, ER, and use-case diagrams.
 
 ---
 

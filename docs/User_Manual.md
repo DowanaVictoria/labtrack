@@ -1,4 +1,4 @@
-# User Manual — LabTrack
+# User Manual — MediLab
 
 Screenshots below are from the live Phase 4 system-test walkthrough (`docs/Testing_Report.md` §6) — real screens, not mockups.
 
@@ -42,7 +42,7 @@ Everything a lab staff member can do, plus:
 
    ![Offering added](screenshots/04-lab-admin-added-offering.png)
 
-2. **Manage staff.** From "Staff" (`/lab/staff`), add staff accounts for your lab. LabTrack emails the new staff member their login details (and shows them on-screen as a fallback); each staff member can change their password afterward from their own account page.
+2. **Manage staff.** From "Staff" (`/lab/staff`), add staff accounts for your lab. MediLab emails the new staff member their login details (and shows them on-screen as a fallback); each staff member can change their password afterward from their own account page.
 
    ![Staff account created](screenshots/05-lab-admin-added-staff.png)
 

@@ -33,7 +33,7 @@ async function sendEmail({ to, subject, html }: { to: string; subject: string; h
   }
 
   try {
-    await transporter.sendMail({ from: `LabTrack <${process.env.SMTP_USER}>`, to, subject, html });
+    await transporter.sendMail({ from: `MediLab <${process.env.SMTP_USER}>`, to, subject, html });
     return { sent: true };
   } catch (error) {
     console.error(`[email] Failed to send "${subject}" email:`, error);
@@ -56,10 +56,10 @@ export async function sendStaffAccountCreatedEmail({
 }) {
   return sendEmail({
     to,
-    subject: `Your ${labName} staff account on LabTrack`,
+    subject: `Your ${labName} staff account on MediLab`,
     html: `
       <p>Hi ${escapeHtml(staffName)},</p>
-      <p>${escapeHtml(labName)} has created a LabTrack staff account for you.</p>
+      <p>${escapeHtml(labName)} has created a MediLab staff account for you.</p>
       <p>
         <strong>Login email:</strong> ${escapeHtml(loginEmail)}<br />
         <strong>Temporary password:</strong> ${escapeHtml(temporaryPassword)}
@@ -102,7 +102,7 @@ export async function sendAppointmentBookedEmail({
         <strong>Price:</strong> GHS ${escapeHtml(price)}
       </p>
       ${prepInstructions ? `<p><strong>Before your appointment:</strong> ${escapeHtml(prepInstructions)}</p>` : ""}
-      <p>You can view or cancel this appointment any time from your LabTrack account.</p>
+      <p>You can view or cancel this appointment any time from your MediLab account.</p>
     `,
   });
 }
@@ -133,7 +133,7 @@ export async function sendAppointmentCancelledEmail({
         <strong>Lab:</strong> ${escapeHtml(labName)}<br />
         <strong>Was scheduled for:</strong> ${escapeHtml(slotDatetime.toLocaleString())}
       </p>
-      <p>You can book a new appointment any time from LabTrack.</p>
+      <p>You can book a new appointment any time from MediLab.</p>
     `,
   });
 }

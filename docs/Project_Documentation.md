@@ -1,4 +1,4 @@
-# LabTrack — Project Documentation
+# MediLab — Project Documentation
 
 **Prepared by:** Victoria Dowana
 **Course:** CSCD 602 — Advanced Software Engineering (Examiner: Prof. Solomon Mensah)
@@ -10,7 +10,7 @@ This is the consolidated project document tying together every artifact produced
 
 ## 1. Project Title
 
-**LabTrack — Multi-Tenant Diagnostic Lab Marketplace & Appointment Platform**
+**MediLab — Multi-Tenant Diagnostic Lab Marketplace & Appointment Platform**
 
 ## 2. Problem Statement
 
@@ -124,7 +124,7 @@ Everything in `docs/Technical_Debt_Plan.md` is a known, disclosed limitation of 
 
 ## 18. Conclusion
 
-LabTrack delivers a working multi-tenant diagnostic-lab marketplace within the exam's 48-hour constraint, built through a full, evidenced software engineering lifecycle: requirements gathered and prioritised before any code was written; effort estimated with Use Case Points and used to actively shape scope (not just recorded after the fact); a multi-tenancy architecture chosen and justified against an explicit alternative; tenant isolation treated as the system's central risk from analysis through a dedicated, layered test suite; 44 automated tests plus a full cross-role system-test walkthrough, all passing; every known limitation disclosed and classified rather than hidden. The one documentation drift found during the project (a stale `todo.md` claim) was caught by cross-checking against the actual code rather than trusted at face value — itself a small demonstration of the kind of engineering discipline the exam asks for.
+MediLab delivers a working multi-tenant diagnostic-lab marketplace within the exam's 48-hour constraint, built through a full, evidenced software engineering lifecycle: requirements gathered and prioritised before any code was written; effort estimated with Use Case Points and used to actively shape scope (not just recorded after the fact); a multi-tenancy architecture chosen and justified against an explicit alternative; tenant isolation treated as the system's central risk from analysis through a dedicated, layered test suite; 44 automated tests plus a full cross-role system-test walkthrough, all passing; every known limitation disclosed and classified rather than hidden. The one documentation drift found during the project (a stale `todo.md` claim) was caught by cross-checking against the actual code rather than trusted at face value — itself a small demonstration of the kind of engineering discipline the exam asks for.
 
 ## 19. References
 

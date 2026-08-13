@@ -7,7 +7,7 @@ export default function SignupPage() {
   return (
     <PageShell maxWidth="max-w-sm" centered>
       <div className="flex flex-col items-center gap-1">
-        <span className="text-[11px] font-bold tracking-widest text-brand uppercase">LabTrack</span>
+        <span className="text-[11px] font-bold tracking-widest text-brand uppercase">MediLab</span>
         <h1 className="text-xl font-bold tracking-tight text-foreground">Create your account</h1>
         <p className="max-w-xs text-sm text-ink-faint">Search and compare diagnostic labs, then book an appointment.</p>
       </div>

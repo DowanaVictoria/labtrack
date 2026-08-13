@@ -1,4 +1,4 @@
-# Maintenance & Future Evolution Plan — LabTrack
+# Maintenance & Future Evolution Plan — MediLab
 
 ## 1. Maintenance strategy
 

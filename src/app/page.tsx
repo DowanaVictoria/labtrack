@@ -45,7 +45,7 @@ export default async function Home() {
     <div className="flex min-h-full flex-col">
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-8">
-          <span className="text-lg font-bold tracking-tight text-foreground">LabTrack</span>
+          <span className="text-lg font-bold tracking-tight text-foreground">MediLab</span>
           {session?.user ? (
             <div className="flex items-center gap-3">
               <span className="hidden text-[12.5px] text-ink-faint sm:inline">
@@ -170,7 +170,7 @@ export default async function Home() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-[12.5px] text-ink-faint sm:flex-row sm:px-8">
-          <span className="font-bold text-ink-soft">LabTrack</span>
+          <span className="font-bold text-ink-soft">MediLab</span>
           <span>Multi-tenant diagnostic lab marketplace &amp; appointment platform.</span>
         </div>
       </footer>

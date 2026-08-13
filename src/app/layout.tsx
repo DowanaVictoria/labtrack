@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "LabTrack",
-    template: "%s — LabTrack",
+    default: "MediLab",
+    template: "%s — MediLab",
   },
   description: "Multi-tenant diagnostic lab marketplace and appointment platform.",
 };

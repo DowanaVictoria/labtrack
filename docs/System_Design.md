@@ -1,6 +1,6 @@
 # System Design
 
-**Project:** LabTrack — Multi-Tenant Diagnostic Lab Marketplace & Appointment Platform
+**Project:** MediLab — Multi-Tenant Diagnostic Lab Marketplace & Appointment Platform
 **Author:** [Your Name]
 **Version:** 1.0
 **Date:** 2026-08-12
@@ -176,7 +176,7 @@ classDiagram
 ```mermaid
 sequenceDiagram
     actor LA as Lab Admin
-    participant Sys as LabTrack
+    participant Sys as MediLab
     participant DB as Database
     actor PA as Platform Admin
 
@@ -201,7 +201,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor P as Patient
-    participant Sys as LabTrack
+    participant Sys as MediLab
     participant DB as Database
     actor S as Lab Staff
 

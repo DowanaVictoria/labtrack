@@ -1,6 +1,6 @@
 # Software Effort Estimation
 
-**Project:** LabTrack — Multi-Tenant Diagnostic Lab Marketplace & Appointment Platform
+**Project:** MediLab — Multi-Tenant Diagnostic Lab Marketplace & Appointment Platform
 **Technique:** Use Case Points (UCP)
 **Author:** [Your Name]
 **Version:** 2.0

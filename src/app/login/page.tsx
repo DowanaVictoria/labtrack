@@ -13,7 +13,7 @@ export default async function LoginPage({
   return (
     <PageShell maxWidth="max-w-sm" centered>
       <div className="flex flex-col items-center gap-1">
-        <span className="text-[11px] font-bold tracking-widest text-brand uppercase">LabTrack</span>
+        <span className="text-[11px] font-bold tracking-widest text-brand uppercase">MediLab</span>
         <h1 className="text-xl font-bold tracking-tight text-foreground">Sign in</h1>
       </div>
 

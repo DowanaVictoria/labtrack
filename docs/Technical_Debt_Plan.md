@@ -1,4 +1,4 @@
-# Technical Debt Plan — LabTrack
+# Technical Debt Plan — MediLab
 
 Per the exam's explicit emphasis on identifying, prioritising, and managing technical debt (not just building the feature). Every item below is a real, confirmed gap in the current code — cross-checked against the source rather than copied from `todo.md`'s original placeholder list (which had drifted stale in at least one place — see `docs/Testing_Report.md` §4).
 
@@ -47,7 +47,7 @@ Classification: **Acceptable temporarily** (fine for a pilot/exam-scope release,
 ## 6. No real payment integration
 
 - **Debt:** `LabTestOffering.price` is informational only — there's no checkout, payment capture, or refund flow anywhere in the app.
-- **Cause:** Out of scope by design — `docs/Effort_Estimation.md`'s locked-in scope treats LabTrack as a booking/comparison marketplace, with payment handled off-platform (at the lab, in person) for the initial release.
+- **Cause:** Out of scope by design — `docs/Effort_Estimation.md`'s locked-in scope treats MediLab as a booking/comparison marketplace, with payment handled off-platform (at the lab, in person) for the initial release.
 - **Impact:** None currently — this was never promised functionality, not a regression.
 - **Priority:** Acceptable temporarily (would become Scheduled the moment online payment becomes an actual product requirement).
 - **Proposed resolution:** Integrate a payment provider (Stripe or similar) at checkout time in the booking flow, if/when in-platform payment becomes a requirement.

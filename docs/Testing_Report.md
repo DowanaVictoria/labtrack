@@ -1,4 +1,4 @@
-# Testing Report — LabTrack
+# Testing Report — MediLab
 
 Companion to `docs/SRS.md`, `docs/System_Design.md`, and `todo.md`'s Phase 4 checklist. Covers everything actually run and verified, not aspirational coverage.
 
@@ -68,13 +68,13 @@ One continuous Playwright run against `next dev` (real browser, real dev Postgre
 | # | Step | Result |
 |---|---|---|
 | 1 | Unauthenticated: submit `registerLab` for a brand-new lab | Pass — redirected to `/login?registered=lab` |
-| 2 | Platform admin (`admin@labtrack.test`, seeded) logs in | Pass |
+| 2 | Platform admin (`admin@medilab.test`, seeded) logs in | Pass |
 | 3 | Platform admin sees the new lab in "Pending lab registrations" and clicks Approve | Pass |
 | 4 | Real UI sign-out (account menu → "Sign out"), not just a fresh browser context | Pass |
 | 5 | New lab admin logs in, `/lab` shows no pending-approval banner | Pass |
 | 6 | Lab admin adds an offering (CBC, GHS 75, 18h turnaround) via `/lab/offerings` | Pass |
 | 7 | Lab admin adds a staff account via `/lab/staff`; "Staff account created" confirmation with credentials shown | Pass |
-| 8 | Patient (`patient@labtrack.test`, seeded) logs in, searches "CBC", finds the new lab's offering listed alongside the seeded pilot labs, books a same-day slot | Pass |
+| 8 | Patient (`patient@medilab.test`, seeded) logs in, searches "CBC", finds the new lab's offering listed alongside the seeded pilot labs, books a same-day slot | Pass |
 | 9 | Patient's "My appointments" shows the booking as BOOKED | Pass |
 | 10 | New staff account logs in, sees the booking in "Today's queue" | Pass |
 | 11 | Staff clicks through the full pipeline: Mark collected → Advance → Complete | Pass |
