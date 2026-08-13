@@ -124,27 +124,6 @@ export default async function Home() {
           </div>
         </section>
 
-        {testCount > 0 && (
-          <section className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-8">
-            <h2 className="text-xl font-bold tracking-tight text-foreground">Tests you can book today</h2>
-            <p className="mt-1 text-sm text-ink-faint">Pulled live from the current catalog — prices are the lowest active offering across approved labs.</p>
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {tests.map((t) => {
-                const lowest = t.offerings[0]?.price;
-                return (
-                  <div key={t.id} className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5">
-                    <span className="w-fit rounded-full bg-brand-tint px-2.5 py-1 text-[10px] font-bold tracking-wide text-brand-dark uppercase">
-                      {t.category}
-                    </span>
-                    <p className="text-base font-bold text-foreground">{t.name}</p>
-                    <p className="text-sm text-ink-faint">{lowest ? <>from <span className="font-bold text-foreground">GHS {lowest.toString()}</span></> : "Price varies by lab"}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
         <section className="bg-background">
           <div className="mx-auto max-w-6xl px-4 py-14 sm:px-8">
             <h2 className="text-xl font-bold tracking-tight text-foreground">How it works</h2>
