@@ -9,10 +9,6 @@ Particular attention must be given to software effort estimation during requirem
 
 The project must be appropriately scoped for completion within 48 hours. You are not expected to develop a large commercial system; rather, you are expected to demonstrate sound and systematic Advanced Software Engineering practice. 
 
-Page **1** of **9** 
-
-**_Examiners: Prof. Solomon Mensah_** 
-
 **PART A: EXAMINATION INSTRUCTIONS** 
 
 ## **1. Individual Work** 
