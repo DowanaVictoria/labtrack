@@ -20,20 +20,20 @@ export function AccountMenu({ profileLinks }: { profileLinks: NavItem[] }) {
   }, []);
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative z-[100]" ref={menuRef}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label="Account menu"
         aria-expanded={open}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-background hover:text-foreground"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ink-soft transition-colors hover:bg-background hover:text-foreground"
       >
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <path d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
       {open && (
-        <div className="absolute right-0 z-10 mt-1 w-48 rounded-xl border border-border bg-surface p-1.5 shadow-lg">
+        <div className="absolute right-0 z-[120] mt-1 w-52 rounded-lg border border-border bg-surface p-1.5 shadow-2xl shadow-foreground/20">
           {profileLinks.map((l) => (
             <Link
               key={l.href}

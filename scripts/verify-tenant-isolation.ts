@@ -5,16 +5,23 @@ import { prisma } from "@/lib/prisma";
 import { forPatient, forTenant, TenantIsolationError } from "@/lib/tenant-scope";
 
 async function main() {
-  const test = await prisma.test.create({
-    data: { name: "Lipid Panel", category: "Blood", sampleType: "Serum" },
-  });
-
   const labA = await prisma.lab.create({
     data: { name: "CityLab Diagnostics", address: "1 Main St", city: "Osu", contactEmail: "a@citylab.test", status: "APPROVED" },
   });
   const labB = await prisma.lab.create({
     data: { name: "QuickTest Labs", address: "2 High St", city: "Tema", contactEmail: "b@quicktest.test", status: "APPROVED" },
   });
+
+  // Deliberately the SAME name, owned by two different labs — Test is now
+  // per-lab (SRS.md FR28 change note), so this must be allowed to coexist,
+  // not collide the way it would have under the old shared catalog.
+  const testA = await prisma.test.create({
+    data: { labId: labA.id, name: "Lipid Panel", category: "Blood", sampleType: "Serum" },
+  });
+  const testB = await prisma.test.create({
+    data: { labId: labB.id, name: "Lipid Panel", category: "Blood", sampleType: "Serum" },
+  });
+
   const patient = await prisma.user.create({
     data: { name: "Ama Owusu", email: `patient-${Date.now()}@test.local`, passwordHash: "x", role: "PATIENT" },
   });
@@ -26,27 +33,28 @@ async function main() {
   });
 
   try {
-    await runChecks(test.id, labA.id, labB.id, patient.id, patientB.id, staffB.id);
+    await runChecks(testA.id, testB.id, labA.id, labB.id, patient.id, patientB.id, staffB.id);
     console.log("All tenant-isolation checks passed.");
   } finally {
     // Runs even when an assertion throws — a failed check must never leave
     // stray rows in the dev database for the next run to trip over.
     await prisma.sample.deleteMany({ where: { appointment: { labId: { in: [labA.id, labB.id] } } } });
     await prisma.appointment.deleteMany({ where: { labId: { in: [labA.id, labB.id] } } });
-    await prisma.labTestOffering.deleteMany({ where: { testId: test.id } });
+    await prisma.labTestOffering.deleteMany({ where: { labId: { in: [labA.id, labB.id] } } });
     // Covers patient/patientB/staffB by id, plus any staff/admin the user.*
     // checks created mid-test (staffA/adminA) in case an earlier assertion
     // threw before runChecks reached its own cleanup line for those.
     await prisma.user.deleteMany({
       where: { OR: [{ id: { in: [patient.id, patientB.id, staffB.id] } }, { labId: { in: [labA.id, labB.id] } }] },
     });
+    await prisma.test.deleteMany({ where: { id: { in: [testA.id, testB.id] } } });
     await prisma.lab.deleteMany({ where: { id: { in: [labA.id, labB.id] } } });
-    await prisma.test.delete({ where: { id: test.id } });
   }
 }
 
 async function runChecks(
-  testId: string,
+  testAId: string,
+  testBId: string,
   labAId: string,
   labBId: string,
   patientId: string,
@@ -57,10 +65,10 @@ async function runChecks(
   const asB = forTenant(labBId);
 
   const offeringA = await asA.labTestOffering.create({
-    data: { testId, price: 80, turnaroundHours: 24 } as never,
+    data: { testId: testAId, price: 80, turnaroundHours: 24 } as never,
   });
   const offeringB = await asB.labTestOffering.create({
-    data: { testId, price: 65, turnaroundHours: 48 } as never,
+    data: { testId: testBId, price: 65, turnaroundHours: 48 } as never,
   });
 
   // The bug that slipped past the first version of this script: findMany()
@@ -192,15 +200,47 @@ async function runChecks(
     assert(e instanceof TenantIsolationError, "FAIL: wrong error type blocking lab.create");
   }
 
-  // Test is the platform-wide catalog, not lab-scoped — reads pass through,
-  // but a tenant-scoped client must never be able to write to it.
-  assert((await asA.test.findMany()).some((t) => t.id === testId), "FAIL: lab A could not read the platform test catalog");
+  // Test: each lab now has its own private catalog (SRS.md FR28 change
+  // note), scoped identically to labTestOffering — NOT the old shared,
+  // read-only-to-everyone platform catalog. Lab B must never see, read, or
+  // write lab A's tests, even though testA and testB share the exact same
+  // name ("Lipid Panel") — proving the per-lab split actually works rather
+  // than silently colliding on name.
+  const ownTestRead = await asA.test.findUnique({ where: { id: testAId } });
+  assert(ownTestRead !== null, "FAIL: lab A could not read its own test");
+  assert(ownTestRead?.name === "Lipid Panel", "FAIL: lab A's own test read back the wrong data");
+
+  const allTestsViaB = await asB.test.findMany();
+  assert(
+    allTestsViaB.length === 1 && allTestsViaB[0].id === testBId,
+    "FAIL: test.findMany() with no `where` leaked across tenants",
+  );
+
+  const leakedTest = await asB.test.findUnique({ where: { id: testAId } });
+  assert(leakedTest === null, "FAIL: lab B read lab A's test by id, even though it shares lab B's own test's name");
+
+  let testUpdateBlocked = false;
   try {
-    await asA.test.update({ where: { id: testId }, data: { name: "Hijacked" } });
-    assert(false, "FAIL: tenant-scoped client allowed test.update");
-  } catch (e) {
-    assert(e instanceof TenantIsolationError, "FAIL: wrong error type blocking test.update");
+    await asB.test.update({ where: { id: testAId }, data: { name: "Hijacked" } });
+  } catch {
+    testUpdateBlocked = true;
   }
+  const testStillOriginal = await prisma.test.findUnique({ where: { id: testAId } });
+  assert(testUpdateBlocked || testStillOriginal?.name === "Lipid Panel", "FAIL: lab B updated lab A's test");
+
+  try {
+    await asB.test.create({ data: { name: "Lab B's Sneaky New Test", category: "Blood", sampleType: "Serum", labId: labAId } as never });
+    assert(false, "FAIL: lab B's test.create was not forced onto lab B's own labId");
+  } catch {
+    // Forcing labId to labB regardless of the caller-supplied value means
+    // this either creates it under labB (not an isolation failure — checked
+    // below) or the (labId, name) unique constraint isn't what's being
+    // tested here, so no throw is actually expected; this branch exists
+    // only to document the attempt was made deliberately.
+  }
+  const sneakyTest = await prisma.test.findFirst({ where: { name: "Lab B's Sneaky New Test" } });
+  assert(sneakyTest?.labId === labBId, "FAIL: test.create trusted a caller-supplied labId instead of forcing the caller's own");
+  if (sneakyTest) await prisma.test.delete({ where: { id: sneakyTest.id } });
 
   // --- forPatient(): scoped by patientId instead of labId ---
   const asPatientA = forPatient(patientId);

@@ -1,29 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ecf0f8;
+  --background: #f3f7f6;
   --surface: #ffffff;
-  --foreground: #16213e;
-  --border: #e1e6f2;
+  --foreground: #10231f;
+  --border: #dce8e4;
 
-  --brand: #2e4fd1;
-  --brand-dark: #1e36a6;
-  --brand-tint: #eaeffd;
+  --brand: #0f8f72;
+  --brand-dark: #07644f;
+  --brand-tint: #dff5ef;
 
-  --gold: #d69a2d;
-  --gold-tint: #fbf1dd;
+  --gold: #b7791f;
+  --gold-tint: #fff2d8;
 
-  --ok: #1e9e6b;
-  --ok-tint: #e5f7ee;
+  --ok: #10865f;
+  --ok-tint: #ddf7ec;
 
   --danger: #d2483f;
   --danger-tint: #fbeae8;
 
-  --purple: #7c4fd9;
-  --purple-tint: #efe6fb;
+  --purple: #5167c9;
+  --purple-tint: #e8ecff;
 
-  --ink-soft: #5b6584;
-  --ink-faint: #9198b3;
+  --ink-soft: #5d6f69;
+  --ink-faint: #8ea09a;
 }
 
 @theme inline {
@@ -60,4 +60,17 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: "tnum" 1;
+}
+
+::selection {
+  background: var(--brand-tint);
+  color: var(--brand-dark);
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  letter-spacing: 0;
 }

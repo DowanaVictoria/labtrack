@@ -12,9 +12,10 @@ export function BookForm({ offeringId }: { offeringId: string }) {
     <form action={action} className="flex w-full flex-col gap-4">
       <input type="hidden" name="offeringId" value={offeringId} />
       <label className={labelClasses}>
-        Slot
+        Appointment slot
         <input name="slotDatetime" type="datetime-local" required className={fieldClasses} />
       </label>
+      <p className="-mt-2 text-[12px] text-ink-faint">The lab will see this booking immediately in their queue.</p>
       {error && <p className="text-sm text-danger">{error}</p>}
       <Button disabled={pending} type="submit" className="w-full">
         {pending ? "Booking..." : "Confirm booking"}

@@ -34,15 +34,23 @@ enum AppointmentStatus {
 
 /// Tenant root. Every lab-scoped table below carries a labId FK back to this model.
 model Lab {
-  id           String    @id @default(uuid())
-  name         String
-  address      String
-  city         String
-  contactEmail String
-  status       LabStatus @default(PENDING)
-  createdAt    DateTime  @default(now())
+  id             String    @id @default(uuid())
+  name           String
+  address        String
+  city           String
+  contactEmail   String
+  /// About/tagline text (~150-500 chars), shown truncated on marketplace
+  /// cards and in full on the lab profile page. Nullable — additive field,
+  /// existing rows get null, no backfill required (UI_REDESIGN_PLAN.md §0.3).
+  description    String?
+  /// Free-text hours, e.g. "Mon-Sat, 8:00am-6:00pm" — no structured schedule
+  /// model, deliberately minimal (UI_REDESIGN_PLAN.md §0.3).
+  operatingHours String?
+  status         LabStatus @default(PENDING)
+  createdAt      DateTime  @default(now())
 
   staff        User[]
+  tests        Test[]
   offerings    LabTestOffering[]
   appointments Appointment[]
   auditLogs    AuditLog[]
@@ -70,16 +78,26 @@ model User {
   @@map("users")
 }
 
-/// Platform-level standardised catalog — not tenant-scoped.
+/// Lab-scoped: each lab has its own private test catalog, not shared across
+/// labs. A lab admin creates entries here (src/app/actions/tests.ts) and
+/// attaches its own price/turnaround via LabTestOffering. The (labId, name)
+/// unique constraint is the database-level backstop against a lab creating
+/// two entries for what's meant to be the same test; case-insensitive
+/// duplicate checking still happens in application code, since Postgres's
+/// default unique constraint is case-sensitive.
 model Test {
   id          String  @id @default(uuid())
+  labId       String
   name        String
   category    String
   sampleType  String
   description String?
 
+  lab       Lab               @relation(fields: [labId], references: [id])
   offerings LabTestOffering[]
 
+  @@unique([labId, name])
+  @@index([labId])
   @@map("tests")
 }
 

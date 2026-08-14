@@ -9,15 +9,21 @@ import { PageShell } from "@/components/ui/page-shell";
 // genuine surprises, not routine "you can't do that right now" cases.
 export default function Error({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
   return (
-    <PageShell maxWidth="max-w-sm" centered>
-      <div className="flex flex-col items-center gap-2">
-        <span className="text-[11px] font-bold tracking-widest text-gold uppercase">Unexpected error</span>
-        <h1 className="text-xl font-bold tracking-tight text-foreground">Something went wrong</h1>
-        <p className="text-sm text-ink-faint">An unexpected error occurred. You can try again.</p>
+    <PageShell maxWidth="max-w-3xl" centered>
+      <div className="w-full overflow-hidden rounded-lg border border-border bg-surface shadow-xl shadow-foreground/10">
+        <div className="bg-[#08251f] px-6 py-8 text-white">
+          <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-bold tracking-wide uppercase text-white/75">
+            Unexpected error
+          </span>
+          <h1 className="mt-5 text-3xl font-bold tracking-tight">Something went wrong</h1>
+          <p className="mt-2 text-sm leading-6 text-white/72">The page could not finish loading. Try again once.</p>
+        </div>
+        <div className="flex justify-end p-5">
+          <Button onClick={() => retry()} variant="secondary">
+            Try again
+          </Button>
+        </div>
       </div>
-      <Button onClick={() => retry()} variant="secondary">
-        Try again
-      </Button>
     </PageShell>
   );
 }

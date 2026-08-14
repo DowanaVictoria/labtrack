@@ -39,9 +39,18 @@ export async function requirePlatformAdminSession() {
   return { session, db: unscopedForPlatformAdmin() };
 }
 
-export async function requirePatientSession() {
+/**
+ * `callbackUrl`, when provided, must be built by the caller from a known
+ * internal route template (e.g. its own dynamic segment) — never echoed
+ * verbatim from arbitrary query input — to avoid introducing an
+ * open-redirect surface (UI_REDESIGN_PLAN.md §6/§8). Omitted, this
+ * preserves the exact previous behavior (`redirect("/login")`).
+ */
+export async function requirePatientSession(callbackUrl?: string) {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user) {
+    redirect(callbackUrl ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/login");
+  }
   if (session.user.role !== "PATIENT") {
     forbidden();
   }

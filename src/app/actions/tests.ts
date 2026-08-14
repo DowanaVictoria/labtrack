@@ -13,15 +13,18 @@ const createTestSchema = z.object({
   description: z.string().trim().max(500, "Description must be under 500 characters."),
 });
 
-// LAB_ADMIN only (SRS.md FR28) — this writes to the shared, platform-wide
-// Test catalog, a bigger blast radius than a lab's own offerings, so it's
-// gated the same way staff.ts gates its LAB_ADMIN-only actions.
+// LAB_ADMIN only (SRS.md FR28) — writes to this lab's OWN test catalog.
+// Unlike the original shared-catalog version of this feature, Test is fully
+// tenant-scoped (src/lib/tenant-scope.ts), so db.test.create() below is
+// already forced to this session's labId — nothing here can reach or
+// collide with another lab's tests.
 //
-// Duplicate-name check is a best-effort, application-level safeguard against
-// catalog fragmentation (two labs creating near-duplicate entries) — it is
-// NOT a database-level unique constraint, so a race between two concurrent
-// creates of the same name isn't ruled out. Documented as known debt in
-// docs/Technical_Debt_Plan.md rather than left silent.
+// Duplicate-name check is a best-effort, application-level safeguard within
+// this lab's own catalog (a lab could otherwise create "Lipid Panel" twice).
+// The (labId, name) unique constraint in prisma/schema.prisma is the
+// database-level backstop; this check exists mainly to give a friendly error
+// instead of a raw constraint-violation, and to catch case-insensitive
+// duplicates the constraint alone wouldn't (e.g. "lipid panel" vs "Lipid Panel").
 export async function createTest(_prevState: string | undefined, formData: FormData) {
   const { session, db } = await requireTenantSession();
   if (session.user.role !== "LAB_ADMIN") forbidden();
@@ -34,11 +37,11 @@ export async function createTest(_prevState: string | undefined, formData: FormD
     where: { name: { equals: name, mode: "insensitive" } },
   });
   if (existing) {
-    return `A test named "${existing.name}" already exists in the catalog. Select it instead of creating a duplicate.`;
+    return `You already have a test named "${existing.name}" in your catalog. Select it instead of creating a duplicate.`;
   }
 
   await db.test.create({
-    data: { name, category, sampleType, description: description || null },
+    data: { name, category, sampleType, description: description || null } as never,
   });
 
   revalidatePath("/lab/offerings");

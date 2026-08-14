@@ -17,13 +17,13 @@ let patient: { id: string };
 let offering: { id: string };
 
 beforeAll(async () => {
-  const test = await prisma.test.create({
-    data: { name: `Queue Test ${Date.now()}`, category: "Blood", sampleType: "Serum" },
-  });
-  testId = test.id;
   lab = await prisma.lab.create({
     data: { name: "Queue-Test Lab", address: "1 Main St", city: "Osu", contactEmail: "q@lab.test", status: "APPROVED" },
   });
+  const test = await prisma.test.create({
+    data: { labId: lab.id, name: `Queue Test ${Date.now()}`, category: "Blood", sampleType: "Serum" },
+  });
+  testId = test.id;
   staff = await prisma.user.create({
     data: { name: "Staff", email: `queue-staff-${Date.now()}@test.local`, passwordHash: "x", role: "LAB_STAFF", labId: lab.id },
   });
@@ -39,9 +39,9 @@ afterAll(async () => {
   await prisma.sample.deleteMany({ where: { appointment: { labId: lab.id } } });
   await prisma.appointment.deleteMany({ where: { labId: lab.id } });
   await prisma.labTestOffering.deleteMany({ where: { testId } });
+  await prisma.test.delete({ where: { id: testId } });
   await prisma.user.deleteMany({ where: { id: { in: [staff.id, patient.id] } } });
   await prisma.lab.delete({ where: { id: lab.id } });
-  await prisma.test.delete({ where: { id: testId } });
 });
 
 function newAppointment(status: "BOOKED" | "SAMPLE_COLLECTED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" = "BOOKED") {

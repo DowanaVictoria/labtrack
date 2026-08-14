@@ -56,6 +56,11 @@ export async function bookAppointment(_prevState: string | undefined, formData: 
     });
   }
 
+  // /patient is now the public search page (UI_REDESIGN_PLAN.md §6) — the
+  // booking-confirmed banner and appointment list live at /patient/appointments
+  // instead. /patient itself still gets revalidated since offering-adjacent
+  // state (e.g. availability display) can change after a booking.
   revalidatePath("/patient");
-  redirect("/patient?booked=1");
+  revalidatePath("/patient/appointments");
+  redirect("/patient/appointments?booked=1");
 }

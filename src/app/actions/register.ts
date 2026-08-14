@@ -11,6 +11,8 @@ const registerLabSchema = z.object({
   address: z.string().trim().min(3, "Enter a valid address.").max(300),
   city: z.string().trim().min(2, "Enter a valid city.").max(100),
   contactEmail: z.email("Enter a valid contact email.").trim(),
+  description: z.string().trim().max(500).optional(),
+  operatingHours: z.string().trim().max(120).optional(),
   adminName: z.string().trim().min(2, "Enter your name.").max(200),
   adminEmail: z.email("Enter a valid login email.").trim(),
   password: z.string().min(8, "Password must be at least 8 characters.").max(200),
@@ -20,7 +22,14 @@ const registerPatientSchema = z.object({
   name: z.string().trim().min(2, "Enter your name.").max(200),
   email: z.email("Enter a valid email address.").trim(),
   password: z.string().min(8, "Password must be at least 8 characters.").max(200),
+  callbackUrl: z.string().optional(),
 });
+
+function safeInternalCallback(value: string | undefined) {
+  if (!value) return undefined;
+  if (!value.startsWith("/") || value.startsWith("//")) return undefined;
+  return value;
+}
 
 // Public, unauthenticated entry point — there's no session/tenant yet, so
 // this legitimately uses the base `prisma` client rather than tenant-scope.ts
@@ -29,7 +38,7 @@ const registerPatientSchema = z.object({
 export async function registerLab(_prevState: string | undefined, formData: FormData) {
   const parsed = parseForm(registerLabSchema, formData);
   if (!parsed.ok) return parsed.error;
-  const { labName, address, city, contactEmail, adminName, adminEmail, password } = parsed.data;
+  const { labName, address, city, contactEmail, description, operatingHours, adminName, adminEmail, password } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (existing) {
@@ -41,7 +50,15 @@ export async function registerLab(_prevState: string | undefined, formData: Form
   try {
     await prisma.$transaction(async (tx) => {
       const lab = await tx.lab.create({
-        data: { name: labName, address, city, contactEmail, status: "PENDING" },
+        data: {
+          name: labName,
+          address,
+          city,
+          contactEmail,
+          description: description || null,
+          operatingHours: operatingHours || null,
+          status: "PENDING",
+        },
       });
       await tx.user.create({
         data: { name: adminName, email: adminEmail, passwordHash, role: "LAB_ADMIN", labId: lab.id },
@@ -62,7 +79,7 @@ export async function registerLab(_prevState: string | undefined, formData: Form
 export async function registerPatient(_prevState: string | undefined, formData: FormData) {
   const parsed = parseForm(registerPatientSchema, formData);
   if (!parsed.ok) return parsed.error;
-  const { name, email, password } = parsed.data;
+  const { name, email, password, callbackUrl } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -79,5 +96,6 @@ export async function registerPatient(_prevState: string | undefined, formData: 
     return "An account with that email already exists.";
   }
 
-  redirect("/login?registered=patient");
+  const safeCallback = safeInternalCallback(callbackUrl);
+  redirect(safeCallback ? `/login?registered=patient&callbackUrl=${encodeURIComponent(safeCallback)}` : "/login?registered=patient");
 }

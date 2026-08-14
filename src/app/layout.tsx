@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     default: "MediLab",
     template: "%s — MediLab",
   },
-  description: "Multi-tenant diagnostic lab marketplace and appointment platform.",
+  description: "Browse verified diagnostic labs, compare tests, and book appointments across cities in Ghana.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

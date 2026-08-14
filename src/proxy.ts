@@ -5,7 +5,13 @@ import { auth } from "@/auth";
 // a fast redirect layer, not the security boundary. The real enforcement is
 // requireTenantSession()/requirePlatformAdminSession()/requirePatientSession()
 // in src/lib/session.ts, called by every route handler and Server Action.
-const protectedPrefixes = ["/lab", "/admin", "/patient"];
+//
+// /patient and /patient/labs/[labId] are deliberately NOT listed here — they
+// became public marketplace pages (UI_REDESIGN_PLAN.md §9.3) and no longer
+// call requirePatientSession() at all, so a blanket "/patient" prefix match
+// here would have silently re-imposed the auth gate the redesign explicitly
+// removed. Only the sub-routes that stay gated are listed explicitly.
+const protectedPrefixes = ["/lab", "/admin", "/patient/book", "/patient/appointments", "/patient/account"];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;

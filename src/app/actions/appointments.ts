@@ -40,7 +40,10 @@ export async function cancelAppointment(_prevState: string | undefined, formData
     });
   }
 
-  revalidatePath("/patient");
+  // CancelAppointmentForm now lives on /patient/appointments (moved from the
+  // now-public /patient, UI_REDESIGN_PLAN.md §3/§6) — that's the path whose
+  // cached list needs to reflect the CANCELLED status.
+  revalidatePath("/patient/appointments");
   return undefined;
 }
 

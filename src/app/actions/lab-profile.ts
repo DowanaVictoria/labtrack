@@ -5,11 +5,16 @@ import { revalidatePath } from "next/cache";
 import { requireTenantSession } from "@/lib/session";
 import { parseForm } from "@/lib/validation";
 
+// description/operatingHours are additive, nullable fields (UI_REDESIGN_PLAN.md
+// §0.3/§6) — both optional; an empty submission clears the field (stored as
+// null) rather than rejecting the form.
 const labProfileSchema = z.object({
   name: z.string().trim().min(2, "Lab name must be at least 2 characters.").max(200),
   address: z.string().trim().min(3, "Enter a valid address.").max(300),
   city: z.string().trim().min(2, "Enter a valid city.").max(100),
   contactEmail: z.email("Enter a valid contact email.").trim(),
+  description: z.string().trim().max(500, "Description must be under 500 characters.").optional(),
+  operatingHours: z.string().trim().max(200, "Operating hours must be under 200 characters.").optional(),
 });
 
 // FR18 (docs/SRS.md §5): lab admin can manage their lab's profile.
@@ -29,7 +34,11 @@ export async function updateLabProfile(_prevState: string | undefined, formData:
 
   await db.lab.update({
     where: { id: session.user.labId! },
-    data: parsed.data,
+    data: {
+      ...parsed.data,
+      description: parsed.data.description || null,
+      operatingHours: parsed.data.operatingHours || null,
+    },
   });
 
   revalidatePath("/lab");

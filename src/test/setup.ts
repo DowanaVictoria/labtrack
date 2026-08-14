@@ -5,10 +5,12 @@
 // tests can set `mockAuth.mockResolvedValue(session)` per case.
 import { vi } from "vitest";
 
-const hoisted = vi.hoisted(() => ({ mockAuth: vi.fn() }));
+const hoisted = vi.hoisted(() => ({ mockAuth: vi.fn(), mockSignIn: vi.fn(), mockSignOut: vi.fn() }));
 export const mockAuth = hoisted.mockAuth;
+export const mockSignIn = hoisted.mockSignIn;
+export const mockSignOut = hoisted.mockSignOut;
 
-vi.mock("@/auth", () => ({ auth: hoisted.mockAuth }));
+vi.mock("@/auth", () => ({ auth: hoisted.mockAuth, signIn: hoisted.mockSignIn, signOut: hoisted.mockSignOut }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/email", () => ({
   sendStaffAccountCreatedEmail: vi.fn().mockResolvedValue({ sent: true }),

@@ -18,24 +18,29 @@ const { updateLabProfile } = await import("@/app/actions/lab-profile");
 const { cancelAppointment } = await import("@/app/actions/appointments");
 const { approveLab } = await import("@/app/actions/labs");
 
-let testId: string;
+let testIdA: string;
+let testIdB: string;
 let labA: { id: string }, labB: { id: string };
 let adminA: { id: string }, staffA: { id: string }, adminB: { id: string }, staffB: { id: string };
 let offeringA: { id: string }, offeringB: { id: string };
 let patientA: { id: string }, patientB: { id: string };
 
 beforeAll(async () => {
-  const test = await prisma.test.create({
-    data: { name: `Isolation Test ${Date.now()}`, category: "Blood", sampleType: "Serum" },
-  });
-  testId = test.id;
-
   labA = await prisma.lab.create({
     data: { name: "Action-Test LabA", address: "1 Main St", city: "Osu", contactEmail: "a@labA.test", status: "APPROVED" },
   });
   labB = await prisma.lab.create({
     data: { name: "Action-Test LabB", address: "2 High St", city: "Tema", contactEmail: "b@labB.test", status: "APPROVED" },
   });
+
+  // Test is now per-lab (SRS.md FR28 change note) — each lab gets its own
+  // row, same name, so cross-lab Test-ownership checks below are meaningful.
+  const [testA, testB] = await Promise.all([
+    prisma.test.create({ data: { labId: labA.id, name: `Isolation Test ${Date.now()}`, category: "Blood", sampleType: "Serum" } }),
+    prisma.test.create({ data: { labId: labB.id, name: `Isolation Test ${Date.now()}`, category: "Blood", sampleType: "Serum" } }),
+  ]);
+  testIdA = testA.id;
+  testIdB = testB.id;
 
   const mkUser = (name: string, role: "LAB_ADMIN" | "LAB_STAFF" | "PATIENT", labId: string | null) =>
     prisma.user.create({
@@ -52,21 +57,21 @@ beforeAll(async () => {
   ]);
 
   offeringA = await prisma.labTestOffering.create({
-    data: { labId: labA.id, testId, price: 80, turnaroundHours: 24 },
+    data: { labId: labA.id, testId: testIdA, price: 80, turnaroundHours: 24 },
   });
   offeringB = await prisma.labTestOffering.create({
-    data: { labId: labB.id, testId, price: 65, turnaroundHours: 48 },
+    data: { labId: labB.id, testId: testIdB, price: 65, turnaroundHours: 48 },
   });
 });
 
 afterAll(async () => {
   await prisma.sample.deleteMany({ where: { appointment: { labId: { in: [labA.id, labB.id] } } } });
   await prisma.appointment.deleteMany({ where: { labId: { in: [labA.id, labB.id] } } });
-  await prisma.labTestOffering.deleteMany({ where: { testId } });
+  await prisma.labTestOffering.deleteMany({ where: { testId: { in: [testIdA, testIdB] } } });
+  await prisma.test.deleteMany({ where: { id: { in: [testIdA, testIdB] } } });
   await prisma.user.deleteMany({ where: { labId: { in: [labA.id, labB.id] } } });
   await prisma.user.deleteMany({ where: { id: { in: [patientA.id, patientB.id] } } });
   await prisma.lab.deleteMany({ where: { id: { in: [labA.id, labB.id] } } });
-  await prisma.test.delete({ where: { id: testId } });
 });
 
 describe("offerings.ts — lab-scoped", () => {
@@ -96,19 +101,31 @@ describe("offerings.ts — lab-scoped", () => {
     expect(updated?.price.toFixed(2)).toBe("90.00");
   });
 
-  it("blocks lab B from creating an offering against lab A's test in a way that writes into lab A", async () => {
+  it("blocks lab B from creating an offering against lab A's own private test", async () => {
     mockAuth.mockResolvedValue(sessionAs({ id: staffB.id, role: "LAB_STAFF", labId: labB.id }));
 
-    // labB already offers `testId` (offeringB) — the (labId, testId) unique
-    // constraint is the same one createOffering's catch block handles, so
-    // this exercises the tenant-scoped labId being forced server-side (a
-    // duplicate against labB, not a new row silently created against labA).
-    const result = await createOffering(undefined, fd({ testId, price: "50", turnaroundHours: "10", prepInstructions: "" }));
+    // Test is per-lab now (SRS.md FR28 change note) — testIdA belongs to
+    // labA. A crafted request (bypassing the UI, which can only ever list
+    // this lab's own tests) supplying labA's testId must be refused, not
+    // silently create an offering under labB pointing at labA's test.
+    const result = await createOffering(undefined, fd({ testId: testIdA, price: "50", turnaroundHours: "10", prepInstructions: "" }));
+
+    expect(result).toBeTruthy();
+    const offeringsForB = await prisma.labTestOffering.findMany({ where: { labId: labB.id } });
+    expect(offeringsForB).toHaveLength(1);
+    expect(offeringsForB[0].id).toBe(offeringB.id);
+  });
+
+  it("blocks lab B from duplicating its own already-offered test (unrelated to lab A)", async () => {
+    mockAuth.mockResolvedValue(sessionAs({ id: staffB.id, role: "LAB_STAFF", labId: labB.id }));
+
+    // labB already offers testIdB (offeringB) — a second attempt against its
+    // own test hits the (labId, testId) unique constraint, distinct from the
+    // cross-lab-test-ownership check above.
+    const result = await createOffering(undefined, fd({ testId: testIdB, price: "50", turnaroundHours: "10", prepInstructions: "" }));
 
     expect(result).toBe("This lab already offers that test — edit the existing offering instead.");
     expect((await prisma.labTestOffering.findUnique({ where: { id: offeringB.id } }))?.price.toFixed(2)).toBe("65.00");
-    const offeringsForA = await prisma.labTestOffering.count({ where: { labId: labA.id } });
-    expect(offeringsForA).toBe(1);
   });
 });
 

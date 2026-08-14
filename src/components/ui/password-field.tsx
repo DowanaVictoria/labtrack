@@ -1,27 +1,30 @@
 "use client";
 
 import { useState } from "react";
+import type { InputHTMLAttributes } from "react";
 import { fieldClasses } from "@/components/ui/field";
 
 export function PasswordField({
   name,
   required,
   minLength,
+  ...props
 }: {
   name: string;
   required?: boolean;
   minLength?: number;
-}) {
+} & Omit<InputHTMLAttributes<HTMLInputElement>, "name" | "type" | "required" | "minLength">) {
   const [visible, setVisible] = useState(false);
 
   return (
-    <div className="relative">
+    <div className="relative w-full min-w-0">
       <input
         name={name}
         type={visible ? "text" : "password"}
         required={required}
         minLength={minLength}
         className={`${fieldClasses} pr-10`}
+        {...props}
       />
       <button
         type="button"

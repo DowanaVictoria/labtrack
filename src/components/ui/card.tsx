@@ -1,9 +1,9 @@
 import type { HTMLAttributes, ReactNode } from "react";
 
 export function Card({ className = "", ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={`rounded-2xl border border-border bg-surface p-5 ${className}`} {...props} />;
+  return <div className={`min-w-0 rounded-lg border border-border bg-surface p-5 shadow-sm shadow-foreground/5 ${className}`} {...props} />;
 }
 
 export function CardHeading({ children }: { children: ReactNode }) {
-  return <h2 className="text-[10.5px] font-bold tracking-widest text-ink-faint uppercase">{children}</h2>;
+  return <h2 className="text-[11px] font-bold tracking-wide text-ink-faint uppercase">{children}</h2>;
 }

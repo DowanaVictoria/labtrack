@@ -181,24 +181,14 @@ function scopeSample(labId: string): Scoper {
   };
 }
 
-// Test is the platform-level catalog (docs/System_Design.md §2 lists it as
-// NOT tenant-scoped) — a lab_admin reads it to pick a test to offer, and (as
-// of SRS.md FR28) may also CREATE a new catalog entry when the one they need
-// doesn't exist yet, so every lab can list tests the seeded catalog didn't
-// anticipate. Update/delete stay blocked: editing or removing an entry other
-// labs may already depend on is a bigger blast radius than adding one, and
-// nothing in the app needs it yet. `createTest` (src/app/actions/tests.ts)
-// does a case-insensitive duplicate-name check before creating, since this
-// client has no other gate against catalog fragmentation — see
-// docs/Technical_Debt_Plan.md for the known gap (app-level check only, no DB
-// unique constraint, so a race between two concurrent creates isn't ruled
-// out at the database level).
-const scopeTest: Scoper = async (operation, args, query) => {
-  if (READ_OPS.has(operation) || operation === "create") {
-    return query(args);
-  }
-  throw new TenantIsolationError(`test.${operation} is not permitted through a tenant-scoped client`);
-};
+// Test is each lab's own private catalog (docs/SRS.md FR28 change note) —
+// scoped exactly like LabTestOffering, via the same labId-column scoper.
+// A lab_admin can only ever see or create tests under their own labId; Lab B
+// has no way to read or discover Lab A's tests through this client. Update
+// and delete are technically available too (scopeByLabIdColumn handles all
+// four operation categories the same way LabTestOffering does), even though
+// today's UI (src/app/actions/tests.ts) only exercises create — nothing
+// stops a future edit/delete flow from reusing this same scoping.
 
 // User (FR19): a lab_admin can create/remove LAB_STAFF accounts for their
 // own lab. Reads are scoped to the caller's own lab (covers both roles,
@@ -256,6 +246,24 @@ async function assertOfferingBelongsToLab(data: Record<string, unknown>, labId: 
   });
   if (!offering || offering.labId !== labId) {
     throw new TenantIsolationError("appointment: offering does not belong to this lab");
+  }
+}
+
+// Same class of gap as assertOfferingBelongsToLab, one level down: now that
+// Test is per-lab (SRS.md FR28 change note), a LabTestOffering.testId FK
+// alone doesn't say the referenced Test belongs to the same lab as the
+// offering. Without this, a crafted createOffering call (bypassing the UI,
+// which can only ever list this lab's own tests via db.test.findMany())
+// could create an offering under lab A that points at lab B's private test.
+async function assertTestBelongsToLab(data: Record<string, unknown>, labId: string) {
+  const testId = data.testId as string | undefined;
+  if (testId === undefined) return; // not being set/changed
+  const test = await prisma.test.findUnique({
+    where: { id: testId },
+    select: { labId: true },
+  });
+  if (!test || test.labId !== labId) {
+    throw new TenantIsolationError("labTestOffering: test does not belong to this lab");
   }
 }
 
@@ -319,9 +327,10 @@ const blockAllOperations = (modelName: string): Scoper => {
 
 export function forTenant(labId: string) {
   const lab = scopeLab(labId);
-  const labTestOffering = scopeByLabIdColumn(labId);
+  const labTestOffering = scopeByLabIdColumn(labId, (data) => assertTestBelongsToLab(data, labId));
   const appointment = scopeByLabIdColumn(labId, (data) => assertOfferingBelongsToLab(data, labId));
   const sample = scopeSample(labId);
+  const test = scopeByLabIdColumn(labId);
   const user = scopeUser(labId);
 
   return prisma.$extends({
@@ -341,8 +350,7 @@ export function forTenant(labId: string) {
         $allOperations: ({ operation, args, query }) => sample(operation, args as AnyArgs, query as never),
       },
       test: {
-        $allOperations: ({ operation, args, query }) =>
-          scopeTest(operation, args as AnyArgs, query as never),
+        $allOperations: ({ operation, args, query }) => test(operation, args as AnyArgs, query as never),
       },
       user: {
         $allOperations: ({ operation, args, query }) => user(operation, args as AnyArgs, query as never),
